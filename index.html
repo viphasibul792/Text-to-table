@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <title>শব্দার্থ টেবিল জেনারেটর (A4 Portrait)</title>
+  <!-- PDF Generation Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- Google Fonts: Noto Serif Bengali for improved rendering -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;600;700&display=swap">
+  <style>
+    /* CSS Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Noto Serif Bengali', 'SolaimanLipi', Arial, sans-serif;
+      background-color: #f0f2f5;
+      padding: 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Control Panel (Hide during printing) */
+    .control-panel {
+      max-width: 900px;
+      margin: 0 auto 30px auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .control-panel h2 {
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    /* Margin Inputs Layout */
+    .margin-inputs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 15px;
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .margin-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .margin-input-group label {
+      font-weight: bold;
+      font-size: 13px;
+      color: #495057;
+    }
+
+    .margin-input-group input {
+      padding: 6px 10px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 150px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      resize: vertical;
+    }
+
+    .btn-container {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 15px;
+      font-weight: bold;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-generate { background-color: #007bff; }
+    .btn-generate:hover { background-color: #0056b3; }
+    .btn-print { background-color: #28a745; }
+    .btn-print:hover { background-color: #1e7e34; }
+    .btn-pdf { background-color: #dc3545; }
+    .btn-pdf:hover { background-color: #bd2130; }
+
+    /* Print / Preview Layout Settings */
+    #output-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Strict A4 Portrait Dimensions */
+    .a4-page {
+      width: 8.27in;
+      height: 11.69in;
+      background-color: white;
+      margin-bottom: 20px;
+      padding-top: 1in;
+      padding-bottom: 1in;
+      padding-left: 1in;
+      padding-right: 1in;
+      box-shadow: 0 0 10px rgba(0,0,0,0.15);
+      page-break-after: always;
+      box-sizing: border-box;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Table Layout matching uploaded image style */
+    .vocab-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .vocab-table td {
+      border: 1px dashed #666666;
+      padding: 4px 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      vertical-align: middle;
+      white-space: normal;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .col-word {
+      width: 25%;
+    }
+
+    .col-meaning {
+      width: 25%;
+    }
+
+    /* Zebra Striping (Even/Odd row styling per side index) */
+    .vocab-table tr.even-row {
+      background-color: #8bb5db;
+    }
+
+    .vocab-table tr.odd-row {
+      background-color: #ffffff;
+    }
+
+    /* Print Stylesheet */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+      body {
+        background-color: white;
+        padding: 0;
+      }
+      .control-panel {
+        display: none !important;
+      }
+      .a4-page {
+        margin: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="control-panel">
+    <h2>শব্দার্থ ইনপুট ফরম্যাট</h2>
+    
+    <!-- Dynamic Margin Control -->
+    <div class="margin-inputs">
+      <div class="margin-input-group">
+        <label for="marginTop">Top Margin (inch):</label>
+        <input type="number" id="marginTop" value="1" step="0.1" min="0">
+      </div>
+      <div class="margin-input-group">
+        <label for="marginBottom">Bottom Margin (inch):</label>
+        <input type="number" id="marginBottom" value="1" step="0.1" min="0">
+      </div>
+      <div class="margin-input-group">
+        <label for="marginLeft">Left Margin (inch):</label>
+        <input type="number" id="marginLeft" value="1" step="0.1" min="0">
+      </div>
+      <div class="margin-input-group">
+        <label for="marginRight">Right Margin (inch):</label>
+        <input type="number" id="marginRight" value="1" step="0.1" min="0">
+      </div>
+    </div>
+
+    <textarea id="inputText" placeholder="এখানে আপনার শব্দার্থসমূহ পেস্ট করুন (যেমন:&#10;1. There (দেয়ার) – ছিল / সেখানে&#10;2. Lived (লিভড) – বাস করত&#10;3. Her mother (হর মাদার) – তার মা)"></textarea>
+    <div class="btn-container">
+      <button class="btn-generate" onclick="processData()">টেবিল তৈরি করুন</button>
+      <button class="btn-print" onclick="window.print()">প্রিন্ট করুন (Print)</button>
+      <button class="btn-pdf" onclick="downloadPDF()">Save as PDF</button>
+    </div>
+  </div>
+
+  <div id="output-container"></div>
+
+  <script>
+    function updateMargins() {
+      const top = document.getElementById('marginTop').value || 1;
+      const bottom = document.getElementById('marginBottom').value || 1;
+      const left = document.getElementById('marginLeft').value || 1;
+      const right = document.getElementById('marginRight').value || 1;
+
+      const pages = document.querySelectorAll('.a4-page');
+      pages.forEach(page => {
+        page.style.paddingTop = top + 'in';
+        page.style.paddingBottom = bottom + 'in';
+        page.style.paddingLeft = left + 'in';
+        page.style.paddingRight = right + 'in';
+      });
+    }
+
+    function processData() {
+      const rawText = document.getElementById('inputText').value;
+      const lines = rawText.split('\n').filter(line => line.trim() !== '');
+      
+      const parsedItems = [];
+
+      lines.forEach(line => {
+        let parts = line.split(/[-–—]/); 
+        if (parts.length >= 2) {
+          let word = parts[0].trim();
+          let meaning = parts.slice(1).join('-').trim();
+          parsedItems.push({ word, meaning });
+        } else if(line.trim() !== '') {
+          parsedItems.push({ word: line.trim(), meaning: '' });
+        }
+      });
+
+      const container = document.getElementById('output-container');
+      container.innerHTML = '';
+
+      if (parsedItems.length === 0) return;
+
+      const topMargin = parseFloat(document.getElementById('marginTop').value) || 1;
+      const bottomMargin = parseFloat(document.getElementById('marginBottom').value) || 1;
+      
+      // Calculate max printable height in pixels (96dpi standard conversion)
+      const printableHeightPx = (11.69 - topMargin - bottomMargin) * 96;
+
+      let itemIndex = 0;
+
+      while (itemIndex < parsedItems.length) {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'a4-page';
+        
+        const table = document.createElement('table');
+        table.className = 'vocab-table';
+        pageDiv.appendChild(table);
+        
+        // Append temporarily to DOM to measure height dynamically
+        container.appendChild(pageDiv);
+        updateMargins();
+
+        let rowCount = 0;
+
+        while (itemIndex < parsedItems.length) {
+          const item1 = parsedItems[itemIndex];     // Odd sequence (1, 3, 5...)
+          const item2 = parsedItems[itemIndex + 1]; // Even sequence (2, 4, 6...)
+
+          const tr = document.createElement('tr');
+          
+          // Apply Alternating Zebra Colors based on row count
+          if (rowCount % 2 === 1) {
+            tr.className = 'even-row';
+          } else {
+            tr.className = 'odd-row';
+          }
+
+          // Left Block: Item 1
+          const td1 = document.createElement('td');
+          td1.className = 'col-word';
+          td1.textContent = item1 ? item1.word : '';
+
+          const td2 = document.createElement('td');
+          td2.className = 'col-meaning';
+          td2.textContent = item1 ? item1.meaning : '';
+
+          // Right Block: Item 2
+          const td3 = document.createElement('td');
+          td3.className = 'col-word';
+          td3.textContent = item2 ? item2.word : '';
+
+          const td4 = document.createElement('td');
+          td4.className = 'col-meaning';
+          td4.textContent = item2 ? item2.meaning : '';
+
+          tr.appendChild(td1);
+          tr.appendChild(td2);
+          tr.appendChild(td3);
+          tr.appendChild(td4);
+
+          table.appendChild(tr);
+
+          // Dynamic page boundary calculation
+          if (table.offsetHeight > printableHeightPx) {
+            // Remove row if it exceeds the page margin space
+            table.removeChild(tr);
+            break;
+          }
+
+          itemIndex += 2; // Jump by 2 items per row
+          rowCount++;
+        }
+      }
+    }
+
+    function downloadPDF() {
+      const element = document.getElementById('output-container');
+      if (!element.children.length) {
+        alert('আগে টেবিল তৈরি করুন!');
+        return;
+      }
+      
+      // Document fonts pre-render check to prevent broken Bengali ligatures
+      document.fonts.ready.then(() => {
+        const opt = {
+          margin:       0,
+          filename:     'vocab-table.pdf',
+          image:        { type: 'jpeg', quality: 1.0 },
+          html2canvas:  { 
+            scale: 3, 
+            useCORS: true, 
+            letterRendering: true,
+            logging: false
+          },
+          jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+      });
+    }
+  </script>
+</body>
+</html>
