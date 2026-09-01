@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <title>শব্দার্থ টেবিল জেনারেটর (A4 Portrait)</title>
+  <!-- PDF Generation Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- Google Fonts: Noto Serif Bengali for improved rendering -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;600;700&display=swap">
+  <style>
+    /* CSS Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Noto Serif Bengali', 'SolaimanLipi', Arial, sans-serif;
+      background-color: #f0f2f5;
+      padding: 20px;
+    }
+
+    /* Control Panel (Hide during printing) */
+    .control-panel {
+      max-width: 900px;
+      margin: 0 auto 30px auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .control-panel h2 {
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    /* Margin Inputs Layout */
+    .margin-inputs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 15px;
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+    }
+
+    .margin-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .margin-input-group label {
+      font-weight: bold;
+      font-size: 13px;
+      color: #495057;
+    }
+
+    .margin-input-group input {
+      padding: 6px 10px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 150px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      resize: vertical;
+    }
+
+    .btn-container {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 15px;
+      font-weight: bold;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-generate { background-color: #007bff; }
+    .btn-generate:hover { background-color: #0056b3; }
+    .btn-print { background-color: #28a745; }
+    .btn-print:hover { background-color: #1e7e34; }
+    .btn-pdf { background-color: #dc3545; }
+    .btn-pdf:hover { background-color: #bd2130; }
+
+    /* Print / Preview Layout Settings */
+    #output-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Strict A4 Portrait Dimensions */
+    .a4-page {
+      width: 8.27in;
+      min-height: 11.69in;
+      background-color: white;
+      margin-bottom: 20px;
+      padding-top: 1in;
+      padding-bottom: 1in;
+      padding-left: 1in;
+      padding-right: 1in;
+      box-shadow: 0 0 10px rgba(0,0,0,0.15);
+      page-break-after: always;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    /* Table Layout matching uploaded image style */
+    .vocab-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .vocab-table td {
+      border: 1px dashed #666666; /* dotted/dashed border like image */
+      padding: 4px 8px;
+      font-size: 12px;
+      line-height: 1.4;
+      vertical-align: middle;
+      white-space: normal;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    /* Column proportions: 
+       Col 1 (Word): 25% | Col 2 (Meaning): 25%
+       Col 3 (Word): 25% | Col 4 (Meaning): 25%
+    */
+    .col-word {
+      width: 25%;
+    }
+
+    .col-meaning {
+      width: 25%;
+    }
+
+    /* Alternating Zebra Striping (Blue color scheme matching image) */
+    .vocab-table tr:nth-child(even) {
+      background-color: #8bb5db; /* Highlighted blue row */
+    }
+
+    .vocab-table tr:nth-child(odd) {
+      background-color: #ffffff; /* White row */
+    }
+
+    /* Print Stylesheet */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+      body {
+        background-color: white;
+        padding: 0;
+      }
+      .control-panel {
+        display: none !important;
+      }
+      .a4-page {
+        margin: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="control-panel">
+    <h2>শব্দার্থ ইনপুট ফরম্যাট</h2>
+    
+    <!-- Dynamic Margin Control -->
+    <div class="margin-inputs">
+      <div class="margin-input-group">
+        <label for="marginTop">Top Margin (inch):</label>
+        <input type="number" id="marginTop" value="1" step="0.1" min="0">
+      </div>
+      <div class="margin-input-group">
+        <label for="marginBottom">Bottom Margin (inch):</label>
+        <input type="number" id="marginBottom" value="1" step="0.1" min="0">
+      </div>
+      <div class="margin-input-group">
+        <label for="marginLeft">Left Margin (inch):</label>
+        <input type="number" id="marginLeft" value="1" step="0.1" min="0">
+      </div>
+      <div class="margin-input-group">
+        <label for="marginRight">Right Margin (inch):</label>
+        <input type="number" id="marginRight" value="1" step="0.1" min="0">
+      </div>
+    </div>
+
+    <textarea id="inputText" placeholder="এখানে আপনার শব্দার্থসমূহ পেস্ট করুন (যেমন:&#10;1. Wanted (ওয়ান্টেড) – চেয়েছিল / চেয়েছিল&#10;2. Make a garden (মেক আ গার্ডেন) – একটি বাগান তৈরি করতে&#10;3. Discussed (ডিসকাসড) – আলোচনা করেছিল)"></textarea>
+    <div class="btn-container">
+      <button class="btn-generate" onclick="processData()">টেবিল তৈরি করুন</button>
+      <button class="btn-print" onclick="window.print()">প্রিন্ট করুন (Print)</button>
+      <button class="btn-pdf" onclick="downloadPDF()">Save as PDF</button>
+    </div>
+  </div>
+
+  <div id="output-container"></div>
+
+  <script>
+    function updateMargins() {
+      const top = document.getElementById('marginTop').value || 1;
+      const bottom = document.getElementById('marginBottom').value || 1;
+      const left = document.getElementById('marginLeft').value || 1;
+      const right = document.getElementById('marginRight').value || 1;
+
+      const pages = document.querySelectorAll('.a4-page');
+      pages.forEach(page => {
+        page.style.paddingTop = top + 'in';
+        page.style.paddingBottom = bottom + 'in';
+        page.style.paddingLeft = left + 'in';
+        page.style.paddingRight = right + 'in';
+      });
+    }
+
+    function processData() {
+      const rawText = document.getElementById('inputText').value;
+      const lines = rawText.split('\n').filter(line => line.trim() !== '');
+      
+      const parsedItems = [];
+
+      // Parse line by line using standard hyphen (-) or dash (–)
+      lines.forEach(line => {
+        let parts = line.split(/[-–—]/); 
+        if (parts.length >= 2) {
+          let word = parts[0].trim();
+          let meaning = parts.slice(1).join('-').trim(); // keep rest of string if extra hyphen exists
+          parsedItems.push({ word, meaning });
+        } else if(line.trim() !== '') {
+          parsedItems.push({ word: line.trim(), meaning: '' });
+        }
+      });
+
+      const container = document.getElementById('output-container');
+      container.innerHTML = ''; // Clear existing preview
+
+      // Maximum 48 rows per page (since 4 columns = 2 items per row, 1 page holds max 48 * 2 = 96 items)
+      const MAX_ROWS = 48;
+      const ITEMS_PER_PAGE = MAX_ROWS * 2; 
+
+      let totalPages = Math.ceil(parsedItems.length / ITEMS_PER_PAGE) || 1;
+
+      for (let pageIndex = 0; pageIndex < totalPages; pageIndex++) {
+        // Create Page element
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'a4-page';
+
+        const table = document.createElement('table');
+        table.className = 'vocab-table';
+
+        const startIndex = pageIndex * ITEMS_PER_PAGE;
+        const pageItems = parsedItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+        // Dynamically calculate actual required rows (balanced across two sides)
+        const numRows = Math.min(MAX_ROWS, Math.ceil(pageItems.length / 2));
+
+        for (let r = 0; r < numRows; r++) {
+          const item1Index = r;
+          const item2Index = r + numRows;
+
+          const item1 = pageItems[item1Index];
+          const item2 = pageItems[item2Index];
+
+          const tr = document.createElement('tr');
+
+          // Left Block (Col 1 & Col 2)
+          const td1 = document.createElement('td');
+          td1.className = 'col-word';
+          td1.textContent = item1 ? item1.word : '';
+
+          const td2 = document.createElement('td');
+          td2.className = 'col-meaning';
+          td2.textContent = item1 ? item1.meaning : '';
+
+          // Right Block (Col 3 & Col 4)
+          const td3 = document.createElement('td');
+          td3.className = 'col-word';
+          td3.textContent = item2 ? item2.word : '';
+
+          const td4 = document.createElement('td');
+          td4.className = 'col-meaning';
+          td4.textContent = item2 ? item2.meaning : '';
+
+          tr.appendChild(td1);
+          tr.appendChild(td2);
+          tr.appendChild(td3);
+          tr.appendChild(td4);
+
+          table.appendChild(tr);
+        }
+
+        pageDiv.appendChild(table);
+        container.appendChild(pageDiv);
+      }
+
+      // Apply currently set margins
+      updateMargins();
+    }
+
+    function downloadPDF() {
+      const element = document.getElementById('output-container');
+      if (!element.children.length) {
+        alert('আগে টেবিল তৈরি করুন!');
+        return;
+      }
+      const opt = {
+        margin:       0,
+        filename:     'vocab-table.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+</body>
+</html>
